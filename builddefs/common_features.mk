@@ -556,6 +556,17 @@ ifeq ($(strip $(VIA_ENABLE)), yes)
     OPT_DEFS += -DVIA_ENABLE
 endif
 
+ifeq ($(strip $(ENC_ENABLE)), yes)
+	RAW_ENABLE := yes
+	COMMON_VPATH += $(QUANTUM_DIR)/enc
+	COMMON_VPATH += $(QUANTUM_DIR)/enc/enc_boards
+	include $(QUANTUM_DIR)/enc/enc_boards/enc_boards.mk
+	OPT_DEFS += -DENC_ENABLE
+	SRC += aes.c
+	SRC += pkcs7_padding.c
+	SRC += enc.c
+endif
+
 VALID_MAGIC_TYPES := yes
 BOOTMAGIC_ENABLE ?= no
 ifneq ($(strip $(BOOTMAGIC_ENABLE)), no)

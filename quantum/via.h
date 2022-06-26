@@ -45,10 +45,17 @@
 #    define VIA_EEPROM_LAYOUT_OPTIONS_DEFAULT 0x00000000
 #endif
 
+// If ENC_ENABLE the layout has to be adjusted
+// for storing the needed crypto stuff inside the EEPROM
+#ifdef ENC_ENABLE
+#    include "enc.h"
+#    define VIA_EEPROM_CUSTOM_CONFIG_ADDR (VIA_EEPROM_LAYOUT_OPTIONS_ADDR + VIA_EEPROM_LAYOUT_OPTIONS_SIZE + ENC_EEPROM_SIZE)
+#else
 // The end of the EEPROM memory used by VIA
 // By default, dynamic keymaps will start at this if there is no
 // custom config
-#define VIA_EEPROM_CUSTOM_CONFIG_ADDR (VIA_EEPROM_LAYOUT_OPTIONS_ADDR + VIA_EEPROM_LAYOUT_OPTIONS_SIZE)
+#    define VIA_EEPROM_CUSTOM_CONFIG_ADDR (VIA_EEPROM_LAYOUT_OPTIONS_ADDR + VIA_EEPROM_LAYOUT_OPTIONS_SIZE)
+#endif
 
 #ifndef VIA_EEPROM_CUSTOM_CONFIG_SIZE
 #    define VIA_EEPROM_CUSTOM_CONFIG_SIZE 0

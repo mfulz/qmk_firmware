@@ -605,6 +605,17 @@ enum quantum_keycodes {
 
     CAPS_WORD,
 
+#ifdef ENC_ENABLE
+    ENC_INIT,
+    ENC_LOAD,
+    ENC_CLOSE,
+    ENC_PASTE,
+    ENC_KEYSPASTE,
+    ENC_RESET,
+    ENC_REQ_ALLOW,
+    ENC_REQ_DENY,
+#endif
+
     // Start of custom keycode range for keyboards and keymaps - always leave at the end
     SAFE_RANGE
 };

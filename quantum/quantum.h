@@ -217,6 +217,10 @@ extern layer_state_t layer_state;
 #    include "via.h"
 #endif
 
+#ifdef ENC_ENABLE
+#    include "enc.h"
+#endif
+
 #ifdef WPM_ENABLE
 #    include "wpm.h"
 #endif

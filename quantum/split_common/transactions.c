@@ -664,6 +664,59 @@ static void pointing_handlers_slave(matrix_row_t master_matrix[], matrix_row_t s
 #endif // defined(POINTING_DEVICE_ENABLE) && defined(SPLIT_POINTING_ENABLE)
 
 ////////////////////////////////////////////////////
+// ENC
+
+#if defined(ENC_ENABLE) && defined(SPLIT_ENC_MODE_ENABLE)
+
+static bool enc_mode_handlers_master(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+    static uint32_t   last_update = 0;
+    enc_mode_t   enc_mode_sync;
+    enc_mode_sync      = enc_get_mode();
+    return send_if_data_mismatch(PUT_ENC_MODE, &last_update, &enc_mode_sync, &split_shmem->enc_mode_sync, sizeof(enc_mode_sync));
+}
+
+static void enc_mode_handlers_slave(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+    enc_set_mode(split_shmem->enc_mode_sync);
+}
+
+#    define TRANSACTIONS_ENC_MODE_MASTER() TRANSACTION_HANDLER_MASTER(enc_mode)
+#    define TRANSACTIONS_ENC_MODE_SLAVE() TRANSACTION_HANDLER_SLAVE(enc_mode)
+#    define TRANSACTIONS_ENC_MODE_REGISTRATIONS [PUT_ENC_MODE] = trans_initiator2target_initializer(enc_mode_sync),
+
+#else  // defined(ENC_ENABLE) && defined(SPLIT_ENC_MODE_ENABLE)
+
+#    define TRANSACTIONS_ENC_MODE_MASTER()
+#    define TRANSACTIONS_ENC_MODE_SLAVE()
+#    define TRANSACTIONS_ENC_MODE_REGISTRATIONS
+
+#endif  // defined(ENC_ENABLE) && defined(SPLIT_ENC_MODE_ENABLE)
+
+#if defined(ENC_ENABLE) && defined(SPLIT_ENC_FLAGS_ENABLE)
+
+static bool enc_flags_handlers_master(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+    static uint32_t   last_update = 0;
+    enc_config_flags_t   enc_flags_sync;
+    enc_flags_sync     = enc_get_config_flags();
+    return send_if_data_mismatch(PUT_ENC_FLAGS, &last_update, &enc_flags_sync, &split_shmem->enc_flags_sync, sizeof(enc_flags_sync));
+}
+
+static void enc_flags_handlers_slave(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+    enc_set_config_flags(split_shmem->enc_flags_sync);
+}
+
+#    define TRANSACTIONS_ENC_FLAGS_MASTER() TRANSACTION_HANDLER_MASTER(enc_flags)
+#    define TRANSACTIONS_ENC_FLAGS_SLAVE() TRANSACTION_HANDLER_SLAVE(enc_flags)
+#    define TRANSACTIONS_ENC_FLAGS_REGISTRATIONS [PUT_ENC_FLAGS] = trans_initiator2target_initializer(enc_flags_sync),
+
+#else  // defined(ENC_ENABLE) && defined(SPLIT_ENC_FLAGS_ENABLE)
+
+#    define TRANSACTIONS_ENC_FLAGS_MASTER()
+#    define TRANSACTIONS_ENC_FLAGS_SLAVE()
+#    define TRANSACTIONS_ENC_FLAGS_REGISTRATIONS
+
+#endif  // defined(ENC_ENABLE) && defined(SPLIT_ENC_FLAGS_ENABLE)
+
+////////////////////////////////////////////////////
 
 split_transaction_desc_t split_transaction_table[NUM_TOTAL_TRANSACTIONS] = {
     // Set defaults
