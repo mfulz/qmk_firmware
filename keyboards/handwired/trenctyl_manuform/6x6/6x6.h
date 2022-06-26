@@ -2,9 +2,9 @@
 
 #include "trenctyl_manuform.h"
 
-#if defined(KEYBOARD_handwired_enctyl_manuform_6x6_f401)
+#if defined(KEYBOARD_handwired_trenctyl_manuform_6x6_f401)
 #    include "f401.h"
-#elif defined(KEYBOARD_handwired_enctyl_manuform_6x6_f411)
+#elif defined(KEYBOARD_handwired_trenctyl_manuform_6x6_f411)
 #    include "f411.h"
 #endif
 
