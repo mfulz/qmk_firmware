@@ -95,7 +95,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [_CONTROL] = LAYOUT_6x6(
-        ENC_INIT,ENC_LOAD,_______,_______,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,EEP_RST,
+        ENC_INIT,ENC_LOAD,ENC_CLOSE,_______,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,EEP_RST,
         _______,_______,_______,_______,_______,_______,                     _______,_______,_______,_______,_______,KC_DEL,
         _______,_______,KC_PGDN,KC_UP,KC_PGUP,_______,                       _______,KC_7,KC_8,KC_9,_______,_______,
         _______,_______,KC_LEFT,KC_DOWN,KC_RGHT,_______,                     KC_HOME,KC_4,KC_5,KC_6,KC_END,_______,
@@ -206,19 +206,19 @@ bool oled_task_user(void) {
 
 #ifdef POINTING_DEVICE_ENABLE
         switch(_cpi) {
-            case 150:
+            case 100:
                 oled_write_P(PSTR("M: >\n"), false);
                 break;
-            case 250:
+            case 200:
                 oled_write_P(PSTR("M: >>\n"), false);
                 break;
-            case 500:
+            case 400:
                 oled_write_P(PSTR("M: >>>\n"), false);
                 break;
-            case 800:
+            case 500:
                 oled_write_P(PSTR("M: >>>>\n"), false);
                 break;
-            case 1000:
+            case 600:
                 oled_write_P(PSTR("M: >>>>>\n"), false);
                 break;
         }
@@ -259,27 +259,27 @@ bool oled_task_user(void) {
 #ifdef POINTING_DEVICE_ENABLE
 
 void pointing_device_init_user(void) {
-    _cpi = 500;
+    _cpi = 400;
 
     pointing_device_set_cpi(_cpi);
 }
 
 void _cpi_next(void) {
     switch(_cpi) {
-        case 150:
-            _cpi = 250;
+        case 100:
+            _cpi = 200;
             break;
-        case 250:
+        case 200:
+            _cpi = 400;
+            break;
+        case 400:
             _cpi = 500;
             break;
         case 500:
-            _cpi = 800;
+            _cpi = 600;
             break;
-        case 800:
-            _cpi = 1000;
-            break;
-        case 1000:
-            _cpi = 150;
+        case 600:
+            _cpi = 100;
             break;
     }
 
@@ -288,20 +288,20 @@ void _cpi_next(void) {
 
 void _cpi_prev(void) {
     switch(_cpi) {
-        case 150:
-            _cpi = 1000;
+        case 100:
+            _cpi = 600;
             break;
-        case 250:
-            _cpi = 150;
+        case 200:
+            _cpi = 100;
+            break;
+        case 400:
+            _cpi = 200;
             break;
         case 500:
-            _cpi = 250;
+            _cpi = 400;
             break;
-        case 800:
+        case 600:
             _cpi = 500;
-            break;
-        case 1000:
-            _cpi = 800;
             break;
     }
 
