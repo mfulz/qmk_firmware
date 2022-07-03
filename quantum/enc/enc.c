@@ -955,6 +955,13 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
             break;
+        case ENC_CLOSE:
+            if (record->event.pressed) {
+                enc_clear_ctx();
+                enc_switch_mode(ENC_MODE_CLOSED);
+            }
+            return false;
+            break;
         case ENC_PASTE:
             if (record->event.pressed) {
                 if (!enc_request.data.data) {
