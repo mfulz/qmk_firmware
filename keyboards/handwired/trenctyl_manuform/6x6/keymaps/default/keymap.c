@@ -95,7 +95,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [_CONTROL] = LAYOUT_6x6(
-        ENC_INIT,ENC_LOAD,ENC_CLOSE,_______,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,EEP_RST,
+        ENC_INIT,ENC_LOAD,ENC_CLOSE,ENC_KEY,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,EEP_RST,
         _______,_______,_______,_______,_______,_______,                     _______,_______,_______,_______,_______,KC_DEL,
         _______,_______,KC_PGDN,KC_UP,KC_PGUP,_______,                       _______,KC_7,KC_8,KC_9,_______,_______,
         _______,_______,KC_LEFT,KC_DOWN,KC_RGHT,_______,                     KC_HOME,KC_4,KC_5,KC_6,KC_END,_______,
