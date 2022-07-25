@@ -614,6 +614,7 @@ enum quantum_keycodes {
     ENC_RESET,
     ENC_REQ_ALLOW,
     ENC_REQ_DENY,
+    ENC_KEY,
 #endif
 
     // Start of custom keycode range for keyboards and keymaps - always leave at the end
