@@ -36,6 +36,7 @@
 #define ENC_MODE_OPEN       0x01
 #define ENC_MODE_LOAD       0x02
 #define ENC_MODE_INIT       0x03
+#define ENC_MODE_KEY        0x04
 
 #define ENC_SUB_MODE_NONE               0x00
 #define ENC_SUB_MODE_SEED               0x01
@@ -44,6 +45,7 @@
 #define ENC_SUB_MODE_REQUEST            0x04
 #define ENC_SUB_MODE_REQUEST_ALLOW      0x05
 #define ENC_SUB_MODE_REQUEST_DENY       0x06
+#define ENC_SUB_MODE_KEY                0x07
 
 #define ENC_CFG_PARANOIA    0x00
 #define ENC_CFG_SECURE      0x01
@@ -100,8 +102,12 @@ typedef struct {
     uint16_t     pw[32];
     uint16_t     pw_check[32];
     uint16_t     pw_size;
-    uint16_t     pw_check_pos;
+    uint16_t     pw_check_size;
     bool         pw_ready;
+    bool         pw_check_ready;
+    uint8_t      key[64];
+    uint16_t     key_size;
+    bool         key_ready;
     uint32_t     seed;
     bool         seed_ready;
     uint32_t     pw_timer;

@@ -176,11 +176,15 @@ uint8_t *decrypt_cbc(int size, uint8_t *data, uint8_t *key, uint16_t *osize) {
 void enc_clear_ctx(void) {
     memset(enc_ctx.state.pw, 0, 32 * sizeof(uint16_t));
     memset(enc_ctx.state.pw_check, 0, 32 * sizeof(uint16_t));
+    memset(enc_ctx.state.key, 0, 64 * sizeof(uint8_t));
 
-    enc_ctx.state.pw_ready     = false;
-    enc_ctx.state.pw_size      = 0;
-    enc_ctx.state.pw_check_pos = 0;
-    enc_ctx.state.seed         = 0;
+    enc_ctx.state.pw_ready          = false;
+    enc_ctx.state.pw_check_ready    = false;
+    enc_ctx.state.key_ready         = false;
+    enc_ctx.state.pw_size           = 0;
+    enc_ctx.state.pw_check_size     = 0;
+    enc_ctx.state.key_size          = 0;
+    enc_ctx.state.seed              = 0;
 #ifdef ENC_HW_RND
     enc_ctx.state.seed_ready = true;
 #else
@@ -320,7 +324,7 @@ void encrypt_keys(void) {
     /*memset(enc_ctx.cnf.keys.s, 0x00, 64*sizeof(uint8_t));*/
 }
 
-int initialize_enc(uint8_t *key, uint8_t *iv) {
+int initialize_enc(uint8_t *key, uint8_t *iv, bool use_state_key) {
     enc_ctx.cnf.flags.max_error      = 0;
     enc_ctx.cnf.flags.error_count    = 0;
     enc_ctx.cnf.flags.paranoia_mode  = ENC_FALSE;
@@ -356,11 +360,22 @@ int initialize_enc(uint8_t *key, uint8_t *iv) {
             enc_ctx.cnf.salt[i] = *v;
         }
     }
-    for (int i = 0; i < 32;) {
-        uint32_t rnd = enc_rnd_get();
-        uint8_t *v   = (uint8_t *)&rnd;
-        for (int j = 0; j < 4; j++, v++, i++) {
-            enc_ctx.keys.key[i] = *v;
+    if (!use_state_key) {
+        for (int i = 0; i < 32;) {
+            uint32_t rnd = enc_rnd_get();
+            uint8_t *v   = (uint8_t *)&rnd;
+            for (int j = 0; j < 4; j++, v++, i++) {
+                enc_ctx.keys.key[i] = *v;
+            }
+        }
+    } else {
+        char hex[2];
+        int ki = 0;
+        char *ptr;
+        for (int i = 0; i < 64; i+=2, ki++) {
+            hex[0] = enc_ctx.state.key[i];
+            hex[1] = enc_ctx.state.key[i+1];
+            enc_ctx.keys.key[ki] = (uint8_t) strtol(hex, &ptr, 16);
         }
     }
     enc_ctx.keys.seed = enc_ctx.state.seed;
@@ -496,6 +511,12 @@ int _enc_handle_request(uint8_t *data) {
         case ENC_CMD_GET_CFG:
             _enc_cmd_get_cfg(data);
             return 0;
+        default:
+            if (enc_ctx.mode.mode == ENC_MODE_KEY || enc_ctx.mode.mode == ENC_MODE_INIT || enc_ctx.mode.mode == ENC_MODE_LOAD) {
+                _enc_set_response_status(ENC_ERR_NOT_ALLOWED, true);
+                return -1;
+            }
+            break;
     }
 
     if (enc_request.req_cmd == ENC_CMD_NONE) {
@@ -851,29 +872,112 @@ void enc_read_seed(uint16_t keycode) {
     }
 }
 
-void enc_read_pw(uint16_t keycode) {
+int enc_read_pw(uint16_t keycode) {
     if (!enc_ctx.state.pw_ready) {
         if (keycode != KC_ENT) {
+            if (enc_ctx.state.pw_size >= 32) {
+                return -1;
+            }
             enc_ctx.state.pw[enc_ctx.state.pw_size] = keycode;
             enc_ctx.state.pw_size++;
-        } else {
+         } else {
             enc_ctx.state.pw_ready = true;
+            return 0;
         }
     }
+    return 0;
 }
 
 int enc_read_pw_check(uint16_t keycode) {
-    if (keycode != KC_ENT) {
-        enc_ctx.state.pw_check[enc_ctx.state.pw_check_pos] = keycode;
-        enc_ctx.state.pw_check_pos++;
-    } else {
-        if (enc_ctx.state.pw_check_pos != enc_ctx.state.pw_size) {
-            return -1;
-        }
-        if (memcmp(enc_ctx.state.pw, enc_ctx.state.pw_check, enc_ctx.state.pw_size * sizeof(uint16_t)) == 0) {
-            return 0;
+    if (!enc_ctx.state.pw_check_ready) {
+        if (keycode != KC_ENT) {
+            if (enc_ctx.state.pw_check_size >= 32) {
+                return -1;
+            }
+            enc_ctx.state.pw_check[enc_ctx.state.pw_check_size] = keycode;
+            enc_ctx.state.pw_check_size++;
         } else {
-            return -1;
+            if (enc_ctx.state.pw_check_size != enc_ctx.state.pw_size) {
+                return -1;
+            }
+            if (memcmp(enc_ctx.state.pw, enc_ctx.state.pw_check, enc_ctx.state.pw_size * sizeof(uint16_t)) == 0) {
+                enc_ctx.state.pw_check_ready = true;
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+int enc_read_key(uint16_t keycode) {
+    if (!enc_ctx.state.key_ready) {
+        if (keycode != KC_ENT) {
+            if (enc_ctx.state.key_size >= 64) {
+                return -1;
+            }
+            switch (keycode) {
+                case KC_A:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'a';
+                    break;
+                case KC_B:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'b';
+                    break;
+                case KC_C:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'c';
+                    break;
+                case KC_D:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'd';
+                    break;
+                case KC_E:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'e';
+                    break;
+                case KC_F:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = 'f';
+                    break;
+                case KC_0:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '0';
+                    break;
+                case KC_1:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '1';
+                    break;
+                case KC_2:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '2';
+                    break;
+                case KC_3:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '3';
+                    break;
+                case KC_4:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '4';
+                    break;
+                case KC_5:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '5';
+                    break;
+                case KC_6:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '6';
+                    break;
+                case KC_7:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '7';
+                    break;
+                case KC_8:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '8';
+                    break;
+                case KC_9:
+                    enc_ctx.state.key[enc_ctx.state.key_size] = '9';
+                    break;
+                default:
+                    return -1;
+                    
+            }
+            enc_ctx.state.key[enc_ctx.state.key_size] = keycode;
+            enc_ctx.state.key_size++;
+        } else {
+            if (enc_ctx.state.key_size != 64) {
+                return -1;
+            }
+            enc_ctx.state.key_ready = true;
+            return 0;
         }
     }
     return 0;
@@ -908,22 +1012,27 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
             }
 
             if (!enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
-                enc_read_pw(keycode);
-                return false;
-            } else {
-                int ret = enc_read_pw_check(keycode);
-                if ((ret == 0) && (keycode == KC_ENT)) {
-                    if (initialize_enc(NULL, NULL) != 0) {
-                        enc_switch_mode(ENC_MODE_CLOSED);
-                    } else {
-                        enc_switch_mode(ENC_MODE_OPEN);
-                    }
-                }
+                int ret = enc_read_pw(keycode);
                 if (ret != 0) {
                     enc_switch_mode(ENC_MODE_CLOSED);
                 }
                 return false;
+            } 
+
+            if (!enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                int ret = enc_read_pw_check(keycode);
+                if (ret != 0) {
+                    enc_switch_mode(ENC_MODE_CLOSED);
+                }
+                return false;
+            } else {
+                if (initialize_enc(NULL, NULL, false) != 0) {
+                    enc_switch_mode(ENC_MODE_CLOSED);
+                } else {
+                    enc_switch_mode(ENC_MODE_OPEN);
+                }
             }
+            return false;
             break;
         case ENC_MODE_LOAD:
             if (!record->event.pressed) {
@@ -939,7 +1048,57 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
             break;
+        case ENC_MODE_KEY:
+            if (!enc_ctx.state.seed_ready) {
+                enc_ctx.mode.sub_mode = ENC_SUB_MODE_SEED;
+            } else if (!enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                enc_ctx.mode.sub_mode = ENC_SUB_MODE_PASSWORD;
+            } else if (!enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                enc_ctx.mode.sub_mode = ENC_SUB_MODE_VERIFY_PASSWORD;
+            } else {
+                enc_ctx.mode.sub_mode = ENC_SUB_MODE_KEY;
+            }
+            if (!record->event.pressed) {
+                return true;
+            }
+            if (!enc_ctx.state.seed_ready) {
+                enc_read_seed(keycode);
+                return false;
+            }
+
+            if (!enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                int ret = enc_read_pw(keycode);
+                if (ret != 0) {
+                    enc_switch_mode(ENC_MODE_CLOSED);
+                }
+                return false;
+            } 
+
+            if (!enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                int ret = enc_read_pw_check(keycode);
+                if (ret != 0) {
+                    enc_switch_mode(ENC_MODE_CLOSED);
+                }
+                return false;
+             }
+
+             if (!enc_ctx.state.key_ready && enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+                int ret = enc_read_key(keycode);
+                if (ret != 0) {
+                    enc_switch_mode(ENC_MODE_CLOSED);
+                }
+                return false;
+             } else {
+                 if (initialize_enc(NULL, NULL, true) != 0) {
+                     enc_switch_mode(ENC_MODE_CLOSED);
+                 } else {
+                     enc_switch_mode(ENC_MODE_OPEN);
+                 }
+             }
+             return false;
+             break;
     }
+
     switch (keycode) {
         case ENC_INIT:
             if (record->event.pressed) {
@@ -1142,6 +1301,8 @@ const char *enc_sub_mode_to_str(uint8_t mode) {
             return "REQUEST ALLOW";
         case ENC_SUB_MODE_REQUEST_DENY:
             return "REQUEST DENY";
+        case ENC_SUB_MODE_KEY:
+            return "KEY";
     }
     return "UNKNOWN";
 }
@@ -1223,7 +1384,10 @@ void enc_write_oled(bool invert) {
                 case ENC_SUB_MODE_VERIFY_PASSWORD:
                     oled_write_P(PSTR("Enter Password again"), invert);
                     break;
-            }
+                case ENC_SUB_MODE_KEY:
+                    oled_write_P(PSTR("Enter Key in hex"), invert);
+                    break;
+             }
             oled_write_P(PSTR("\n"), invert);
             return;
         default:
