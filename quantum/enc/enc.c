@@ -205,6 +205,7 @@ void enc_switch_mode(uint8_t mode) {
             enc_clear_ctx();
             break;
         case ENC_MODE_INIT:
+        case ENC_MODE_KEY:
             enc_ctx.mode.sub_mode = ENC_SUB_MODE_SEED;
             break;
     }
@@ -1118,6 +1119,13 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 enc_clear_ctx();
                 enc_switch_mode(ENC_MODE_CLOSED);
+            }
+            return false;
+            break;
+        case ENC_KEY:
+            if (record->event.pressed) {
+                enc_clear_ctx();
+                enc_switch_mode(ENC_MODE_KEY);
             }
             return false;
             break;
