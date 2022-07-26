@@ -278,7 +278,7 @@ int enc_unlock(void) {
         enc_config_store();
     }
 
-    size          = 52;
+    size          = 64;
     uint8_t *keys = decrypt_cbc(size, enc_ctx.cnf.key_store, pw_hash, (uint16_t *)&size);
     if (!keys) {
         return -1;
@@ -971,7 +971,6 @@ int enc_read_key(uint16_t keycode) {
                     return -1;
                     
             }
-            enc_ctx.state.key[enc_ctx.state.key_size] = keycode;
             enc_ctx.state.key_size++;
         } else {
             if (enc_ctx.state.key_size != 64) {
@@ -1020,13 +1019,18 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
                 return false;
             } 
 
-            if (!enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+            if (!enc_ctx.state.pw_check_ready && enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
                 int ret = enc_read_pw_check(keycode);
                 if (ret != 0) {
                     enc_switch_mode(ENC_MODE_CLOSED);
+                    return false;
                 }
-                return false;
-            } else {
+                if (!enc_ctx.state.pw_check_ready) {
+                    return false;
+                }
+            }
+
+            if (enc_ctx.state.pw_check_ready && enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
                 if (initialize_enc(NULL, NULL, false) != 0) {
                     enc_switch_mode(ENC_MODE_CLOSED);
                 } else {
@@ -1089,7 +1093,9 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
                     enc_switch_mode(ENC_MODE_CLOSED);
                 }
                 return false;
-             } else {
+             }
+
+             if (enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
                  if (initialize_enc(NULL, NULL, true) != 0) {
                      enc_switch_mode(ENC_MODE_CLOSED);
                  } else {
@@ -1392,10 +1398,25 @@ void enc_write_oled(bool invert) {
                 case ENC_SUB_MODE_VERIFY_PASSWORD:
                     oled_write_P(PSTR("Enter Password again"), invert);
                     break;
+            }
+            oled_write_P(PSTR("\n"), invert);
+            return;
+        case ENC_MODE_KEY:
+            oled_write_P(PSTR("E: INIT - "), invert);
+            switch (enc_ctx.mode.sub_mode) {
+                case ENC_SUB_MODE_SEED:
+                    oled_write_P(PSTR("Enter Seed"), invert);
+                    break;
+                case ENC_SUB_MODE_PASSWORD:
+                    oled_write_P(PSTR("Enter Password"), invert);
+                    break;
+                case ENC_SUB_MODE_VERIFY_PASSWORD:
+                    oled_write_P(PSTR("Enter Password again"), invert);
+                    break;
                 case ENC_SUB_MODE_KEY:
                     oled_write_P(PSTR("Enter Key in hex"), invert);
                     break;
-             }
+            }
             oled_write_P(PSTR("\n"), invert);
             return;
         default:
