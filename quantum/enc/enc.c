@@ -967,6 +967,12 @@ int enc_read_key(uint16_t keycode) {
                 case KC_9:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '9';
                     break;
+                case KC_BSPC:
+                    enc_ctx.state.key_size--;
+                    if (enc_ctx.state.key_size < 0) {
+                        enc_ctx.state.key_size = 0;
+                    }
+                    return 0;
                 default:
                     return -1;
                     
