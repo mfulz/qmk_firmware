@@ -1049,7 +1049,11 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
             if (!record->event.pressed) {
                 return true;
             }
-            enc_read_pw(keycode);
+            int ret = enc_read_pw(keycode);
+            if (ret != 0) {
+                enc_switch_mode(ENC_MODE_CLOSED);
+                return false;
+            }
             if (enc_ctx.state.pw_ready) {
                 if (enc_unlock() != 0) {
                     enc_switch_mode(ENC_MODE_CLOSED);
@@ -1093,15 +1097,18 @@ bool process_record_enc(uint16_t keycode, keyrecord_t *record) {
                 return false;
              }
 
-             if (!enc_ctx.state.key_ready && enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+             if (!enc_ctx.state.key_ready && enc_ctx.state.pw_check_ready && enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
                 int ret = enc_read_key(keycode);
                 if (ret != 0) {
                     enc_switch_mode(ENC_MODE_CLOSED);
+                    return false;
                 }
-                return false;
+                if (!enc_ctx.state.key_ready) {
+                    return false;
+                }
              }
 
-             if (enc_ctx.state.pw_check_ready &&  enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
+             if (enc_ctx.state.key_ready && enc_ctx.state.pw_check_ready && enc_ctx.state.pw_ready && enc_ctx.state.seed_ready) {
                  if (initialize_enc(NULL, NULL, true) != 0) {
                      enc_switch_mode(ENC_MODE_CLOSED);
                  } else {
