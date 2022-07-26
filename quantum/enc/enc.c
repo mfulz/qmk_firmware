@@ -177,6 +177,7 @@ void enc_clear_ctx(void) {
     memset(enc_ctx.state.pw, 0, 32 * sizeof(uint16_t));
     memset(enc_ctx.state.pw_check, 0, 32 * sizeof(uint16_t));
     memset(enc_ctx.state.key, 0, 64 * sizeof(uint8_t));
+    memset(enc_ctx.mode.key, 0, 64 * sizeof(uint8_t));
 
     enc_ctx.state.pw_ready          = false;
     enc_ctx.state.pw_check_ready    = false;
@@ -184,6 +185,7 @@ void enc_clear_ctx(void) {
     enc_ctx.state.pw_size           = 0;
     enc_ctx.state.pw_check_size     = 0;
     enc_ctx.state.key_size          = 0;
+    enc_ctx.mode.key_size           = 0;
     enc_ctx.state.seed              = 0;
 #ifdef ENC_HW_RND
     enc_ctx.state.seed_ready = true;
@@ -199,6 +201,8 @@ void enc_clear_ctx(void) {
 
 void enc_switch_mode(uint8_t mode) {
     enc_ctx.mode.sub_mode = ENC_SUB_MODE_NONE;
+    enc_ctx.mode.key_size = 0;
+    memset(enc_ctx.mode.key, 0, 64 * sizeof(uint8_t));
 
     switch (mode) {
         case ENC_MODE_CLOSED:
@@ -916,68 +920,87 @@ int enc_read_key(uint16_t keycode) {
     if (!enc_ctx.state.key_ready) {
         if (keycode != KC_ENT) {
             if (enc_ctx.state.key_size >= 64) {
-                return -1;
+                return 0;
             }
             switch (keycode) {
                 case KC_A:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'a';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'A';
                     break;
                 case KC_B:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'b';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'B';
                     break;
                 case KC_C:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'c';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'C';
                     break;
                 case KC_D:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'd';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'D';
                     break;
                 case KC_E:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'e';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'E';
                     break;
                 case KC_F:
                     enc_ctx.state.key[enc_ctx.state.key_size] = 'f';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = 'F';
                     break;
                 case KC_0:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '0';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '0';
                     break;
                 case KC_1:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '1';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '1';
                     break;
                 case KC_2:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '2';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '2';
                     break;
                 case KC_3:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '3';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '3';
                     break;
                 case KC_4:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '4';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '4';
                     break;
                 case KC_5:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '5';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '5';
                     break;
                 case KC_6:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '6';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '6';
                     break;
                 case KC_7:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '7';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '7';
                     break;
                 case KC_8:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '8';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '8';
                     break;
                 case KC_9:
                     enc_ctx.state.key[enc_ctx.state.key_size] = '9';
+                    enc_ctx.mode.key[enc_ctx.state.key_size] = '9';
                     break;
                 case KC_BSPC:
                     enc_ctx.state.key_size--;
+                    enc_ctx.mode.key_size--;
                     if (enc_ctx.state.key_size < 0) {
                         enc_ctx.state.key_size = 0;
+                        enc_ctx.mode.key_size = 0;
                     }
                     return 0;
                 default:
-                    return -1;
+                    return 0;
                     
             }
             enc_ctx.state.key_size++;
+            enc_ctx.mode.key_size++;
         } else {
             if (enc_ctx.state.key_size != 64) {
                 return -1;
@@ -1378,13 +1401,13 @@ const char *enc_bool_to_str(int val) {
 
 void enc_write_oled(bool invert) {
 #ifdef OLED_ENABLE
+    oled_set_cursor(0, 0);
     for (int i = 0; i < oled_max_lines(); i++) {
         for (int j = 0; j < oled_max_chars(); j++) {
-            oled_set_cursor(i, j);
-            oled_write_P(PSTR(" "), false);
+            oled_write_char(' ', invert);
         }
     }
-    oled_set_cursor(0, 0);
+    /*oled_clear();*/
 
     switch (enc_ctx.mode.mode) {
         case ENC_MODE_OPEN:
@@ -1415,7 +1438,7 @@ void enc_write_oled(bool invert) {
             oled_write_P(PSTR("\n"), invert);
             return;
         case ENC_MODE_KEY:
-            oled_write_P(PSTR("E: INIT - "), invert);
+            oled_write_P(PSTR("E: KEY - "), invert);
             switch (enc_ctx.mode.sub_mode) {
                 case ENC_SUB_MODE_SEED:
                     oled_write_P(PSTR("Enter Seed"), invert);
@@ -1427,7 +1450,23 @@ void enc_write_oled(bool invert) {
                     oled_write_P(PSTR("Enter Password again"), invert);
                     break;
                 case ENC_SUB_MODE_KEY:
-                    oled_write_P(PSTR("Enter Key in hex"), invert);
+                    oled_write_P(PSTR("Enter Key in hex\n"), invert);
+                    uint8_t block_num = (enc_ctx.mode.key_size-1) / 8;
+                    oled_write_char('B', invert);
+                    oled_write(get_u8_str(block_num, '0'), invert);
+                    oled_write_P(PSTR(": "), invert);
+                    bool space = false;
+                    for (int i = 0 + (block_num * 8); i < enc_ctx.mode.key_size; i++) {
+                        if (space) {
+                            oled_write_char(' ', invert);
+                        }
+                        oled_write_char(enc_ctx.mode.key[i], invert);
+                        if (i > 0 && (((i+1) % 2) == 0)) {
+                            space = true;
+                        } else {
+                            space = false;
+                        }
+                    }
                     break;
             }
             oled_write_P(PSTR("\n"), invert);
@@ -1444,19 +1483,19 @@ void enc_write_oled(bool invert) {
         oled_write(get_u8_str(enc_ctx.mode.req_timeout, ' '), invert);
         oled_write_P(PSTR("s\n"), invert);
         return;
+    } else {
+        oled_write_P(PSTR("EF:I P S ME EC TO\n"), invert);
+        oled_write_P(PSTR("   "), invert);
+        oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.initialized)), invert);
+        oled_write_char(' ', invert);
+        oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.paranoia_mode)), invert);
+        oled_write_char(' ', invert);
+        oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.secure_mode)), invert);
+        oled_write(get_u8_str(enc_ctx.cnf.flags.max_error, ' '), invert);
+        oled_write(get_u8_str(enc_ctx.cnf.flags.error_count, ' '), invert);
+        oled_write(get_u8_str(enc_ctx.cnf.flags.timeout, ' '), invert);
+        oled_write_char('\n', invert);
     }
-
-    oled_write_P(PSTR("EF:I P S ME EC TO\n"), invert);
-    oled_write_P(PSTR("   "), invert);
-    oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.initialized)), invert);
-    oled_write_P(PSTR(" "), invert);
-    oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.paranoia_mode)), invert);
-    oled_write_P(PSTR(" "), invert);
-    oled_write_P(PSTR(enc_bool_to_str(enc_ctx.cnf.flags.secure_mode)), invert);
-    oled_write(get_u8_str(enc_ctx.cnf.flags.max_error, ' '), invert);
-    oled_write(get_u8_str(enc_ctx.cnf.flags.error_count, ' '), invert);
-    oled_write(get_u8_str(enc_ctx.cnf.flags.timeout, ' '), invert);
-    oled_write_P(PSTR("\n"), invert);
 #else
     return;
 #endif
