@@ -96,6 +96,9 @@ typedef struct {
     uint8_t req_cmd;
     uint32_t req_timeout;
     bool req_timeout_enabled;
+    // key just temporary
+    uint8_t key[64];
+    uint16_t key_size;
 } enc_mode_t;
 
 typedef struct {
