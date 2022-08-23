@@ -988,11 +988,9 @@ int enc_read_key(uint16_t keycode) {
                     enc_ctx.mode.key[enc_ctx.state.key_size] = '9';
                     break;
                 case KC_BSPC:
-                    enc_ctx.state.key_size--;
-                    enc_ctx.mode.key_size--;
-                    if (enc_ctx.state.key_size < 0) {
-                        enc_ctx.state.key_size = 0;
-                        enc_ctx.mode.key_size = 0;
+                    if (enc_ctx.state.key_size > 0) {
+                        enc_ctx.state.key_size--;
+                        enc_ctx.mode.key_size--;
                     }
                     return 0;
                 default:
@@ -1453,7 +1451,32 @@ void enc_write_oled(bool invert) {
                     oled_write_P(PSTR("Enter Key in hex\n"), invert);
                     uint8_t block_num = (enc_ctx.mode.key_size-1) / 8;
                     oled_write_char('B', invert);
-                    oled_write(get_u8_str(block_num, '0'), invert);
+                    switch (block_num) {
+                        case 0:
+                            oled_write_char('0', invert);
+                            break;
+                        case 1:
+                            oled_write_char('1', invert);
+                            break;
+                        case 2:
+                            oled_write_char('2', invert);
+                            break;
+                        case 3:
+                            oled_write_char('3', invert);
+                            break;
+                        case 4:
+                            oled_write_char('4', invert);
+                            break;
+                        case 5:
+                            oled_write_char('5', invert);
+                            break;
+                        case 6:
+                            oled_write_char('6', invert);
+                            break;
+                        case 7:
+                            oled_write_char('7', invert);
+                            break;
+                    }
                     oled_write_P(PSTR(": "), invert);
                     bool space = false;
                     for (int i = 0 + (block_num * 8); i < enc_ctx.mode.key_size; i++) {
