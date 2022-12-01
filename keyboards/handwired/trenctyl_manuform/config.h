@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define VENDOR_ID 0x44FD
-#define MANUFACTURER mfulz
+//#define VENDOR_ID 0x44FD
+//#define MANUFACTURER mfulz
 
 /* mouse config */
 //#define MOUSEKEY_INTERVAL    20

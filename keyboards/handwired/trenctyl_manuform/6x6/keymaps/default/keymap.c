@@ -87,7 +87,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV , KC_1  , KC_2  , KC_3  , KC_4  , KC_5  ,                         KC_6  , KC_7  , KC_8  , KC_9  , KC_0  ,KC_BSPC,
         KC_TAB , KC_Q  , KC_W  , KC_E  , KC_R  , KC_T  ,                         KC_Y  , KC_U  , KC_I  , KC_O  , KC_P  ,KC_LBRC,
         KC_LCTL, KC_A  , KC_S  , KC_D  , KC_F  , KC_G  ,                         KC_H  , KC_J  , KC_K  , KC_L  ,KC_SCLN,KC_QUOT,
-        OSM(MOD_LSFT), KC_Z  , KC_X  , KC_C  , KC_V  , KC_B  ,                   KC_N  , KC_M  ,KC_DOT,KC_COMM ,KC_SLSH,KC_BSLASH,
+        OSM(MOD_LSFT), KC_Z  , KC_X  , KC_C  , KC_V  , KC_B  ,                   KC_N  , KC_M  ,KC_DOT,KC_COMM ,KC_SLSH,KC_BACKSLASH,
                  KC_MUTE,KC_RBRC,KC_MINS,                                                       KC_NUBS, KC_EQL,
                                          KC_LALT,KC_ENT,                        KC_SPC, KC_RALT,
                                          KC_ESC,I3WM,                           KC_LGUI,MOUSE,
@@ -95,7 +95,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [_CONTROL] = LAYOUT_6x6(
-        ENC_INIT,ENC_LOAD,ENC_CLOSE,ENC_KEY,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,EEP_RST,
+        /*ENC_INIT,ENC_LOAD,ENC_CLOSE,ENC_KEY,_______,_______,                   ENC_REQ_ALLOW,ENC_REQ_DENY,_______,_______,_______,_______,*/
+        _______,_______,_______,_______,_______,_______,                     _______,_______,_______,_______,_______,_______,
         _______,_______,_______,_______,_______,_______,                     _______,_______,_______,_______,_______,KC_DEL,
         _______,_______,KC_PGDN,KC_UP,KC_PGUP,_______,                       _______,KC_7,KC_8,KC_9,_______,_______,
         _______,_______,KC_LEFT,KC_DOWN,KC_RGHT,_______,                     KC_HOME,KC_4,KC_5,KC_6,KC_END,_______,
@@ -319,9 +320,9 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 }
 #endif
 
-void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (!_vis_status) {
-        return;
+        return false;
     }
 
     HSV hsv = (HSV){0, 0, 0};
@@ -341,7 +342,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
             led_off = true;
             break;
         default:
-            return;
+            return false;
     }
 
     hsv.v = rgb_matrix_get_val();
@@ -368,6 +369,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
             }
         }
     }
+    return false;
 }
 
 typedef struct _vis_status {
@@ -429,11 +431,15 @@ void keyboard_pre_init_user(void) {
     _vis_status = true;
     _vis_timeout_sec = 120;
     _vis_timer = timer_read32();
+#ifdef ENC_ENABLE
     pre_init_enc();
+#endif
 }
 
 void eeconfig_init_user(void) {
+#ifdef ENC_ENABLE
     eeconfig_init_enc();
+#endif
 }
 
 void keyboard_post_init_user(void) {
