@@ -59,7 +59,8 @@
 #define DYNAMIC_KEYMAP_EEPROM_MAX_ADDR 2047
 
 /* EEPROM Driver Configuration */
-#define EXTERNAL_EEPROM_I2C_BASE_ADDRESS 0b10100010
+#define WEAR_LEVELING_LOGICAL_SIZE 2048
+#define WEAR_LEVELING_BACKING_SIZE (WEAR_LEVELING_LOGICAL_SIZE * 2)
 
 // RGB Matrix Animation modes. Explicitly enabled
 // For full list of effects, see:
@@ -109,8 +110,3 @@
 #define ENABLE_RGB_MATRIX_MULTISPLASH
 #define ENABLE_RGB_MATRIX_SOLID_SPLASH
 #define ENABLE_RGB_MATRIX_SOLID_MULTISPLASH
-
-/* Allow VIA to edit lighting */
-#ifdef VIA_ENABLE
-#    define VIA_QMK_RGBLIGHT_ENABLE
-#endif
