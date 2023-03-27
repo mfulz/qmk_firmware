@@ -1,0 +1,6 @@
+MCU = STM32F401
+
+BOOTLOADER = tinyuf2
+
+LTO_ENABLE = no
+SERIAL_DRIVER = usart

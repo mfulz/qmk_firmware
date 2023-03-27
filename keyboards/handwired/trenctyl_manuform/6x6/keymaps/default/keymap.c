@@ -18,6 +18,8 @@
 
 #ifdef RGB_MATRIX_ENABLE
 // clang-format off
+extern rgb_config_t rgb_matrix_config;
+
 led_config_t g_led_config = {{
     {      0,      5,   10,     16,     22,     30,  },
     {      1,      6,   11,     17,     23,     31,  },
@@ -163,9 +165,117 @@ int get_speed_percent(void) {
 static uint16_t _cpi;
 #endif
 
-static uint8_t _vis_timeout_sec;
+static uint16_t _vis_timeout_sec;
 static uint32_t _vis_timer;
 static bool _vis_status;
+
+#if defined(RGB_MATRIX_EFFECT)
+#    undef RGB_MATRIX_EFFECT
+#endif // defined(RGB_MATRIX_EFFECT)
+
+#define RGB_MATRIX_EFFECT(x) RGB_MATRIX_EFFECT_##x,
+enum {
+    RGB_MATRIX_EFFECT_NONE,
+#include "rgb_matrix_effects.inc"
+#undef RGB_MATRIX_EFFECT
+#ifdef RGB_MATRIX_CUSTOM_KB
+#    include "rgb_matrix_kb.inc"
+#endif
+#ifdef RGB_MATRIX_CUSTOM_USER
+#    include "rgb_matrix_user.inc"
+#endif
+};
+
+#define RGB_MATRIX_EFFECT(x)    \
+    case RGB_MATRIX_EFFECT_##x: \
+        return #x;
+const char* rgb_matrix_name(uint8_t effect) {
+    switch (effect) {
+        case RGB_MATRIX_EFFECT_NONE:
+            return "NONE";
+#include "rgb_matrix_effects.inc"
+#undef RGB_MATRIX_EFFECT
+#ifdef RGB_MATRIX_CUSTOM_KB
+#    include "rgb_matrix_kb.inc"
+#endif
+#ifdef RGB_MATRIX_CUSTOM_USER
+#    include "rgb_matrix_user.inc"
+#endif
+        default:
+            return "UNKNOWN";
+    }
+}
+
+void oled_write_rgb_matrix(void) {
+    /*char rgb_matrix_info_str[24] = {0};*/
+    oled_write("RGB: ", false);
+    /*switch (rgb_matrix_config.mode) {*/
+        /*case 1:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Solid Color");*/
+            /*break;*/
+        /*case 2:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Alphas Mods");*/
+            /*break;*/
+        /*case 3:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Gradient up down");*/
+            /*break;*/
+        /*case 4:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Gradient left right");*/
+            /*break;*/
+        /*case 5:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Breathing");*/
+            /*break;*/
+        /*case 6:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Sat");*/
+            /*break;*/
+        /*case 7:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Val");*/
+            /*break;*/
+        /*case 8:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Pinwheel Sat");*/
+            /*break;*/
+        /*case 9:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Pinwheel Val");*/
+            /*break;*/
+        /*case 10:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Spiral Sat");*/
+            /*break;*/
+        /*case 11:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Band Spiral Val");*/
+            /*break;*/
+        /*case 12:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle All");*/
+            /*break;*/
+        /*case 13:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle left right");*/
+            /*break;*/
+        /*case 14:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle up down");*/
+            /*break;*/
+        /*case 15:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle out in");*/
+            /*break;*/
+        /*case 16:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle out in dual");*/
+            /*break;*/
+        /*case 17:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Rainbow mov chevron");*/
+            /*break;*/
+        /*case 18:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle Pinwheel");*/
+            /*break;*/
+        /*case 19:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Cycle Spiral");*/
+            /*break;*/
+        /*case 20:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "Dual Beacon");*/
+            /*break;*/
+        /*default:*/
+            /*snprintf(rgb_matrix_info_str, sizeof(rgb_matrix_info_str), "%2d", rgb_matrix_config.mode);*/
+            /*break;*/
+    /*}*/
+    oled_write_ln(rgb_matrix_name(rgb_matrix_config.mode), false);
+}
 
 bool oled_task_user(void) {
     // Host Keyboard Layer Status
@@ -226,7 +336,7 @@ bool oled_task_user(void) {
 #endif
 
         oled_write_P(PSTR("V: "), false);
-        oled_write_P(get_u8_str(_oled_timeout, ' '), false);
+        oled_write_P(get_u16_str(_oled_timeout, ' '), false);
         oled_write_P(PSTR("s\n"), false);
     } else {
 #ifdef ENC_ENABLE
@@ -250,6 +360,8 @@ bool oled_task_user(void) {
             default:
                 oled_write_P(PSTR("Undefined\n"), false);
         }
+
+        oled_write_rgb_matrix();
     }
 
     return true;
@@ -429,7 +541,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 
 void keyboard_pre_init_user(void) {
     _vis_status = true;
-    _vis_timeout_sec = 120;
+    _vis_timeout_sec = 600;
     _vis_timer = timer_read32();
 #ifdef ENC_ENABLE
     pre_init_enc();

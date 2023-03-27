@@ -1,10 +1,10 @@
 {
-    "keyboard_name": "Trenctyl Manuform(6x6) BlackPill F01",
+    "keyboard_name": "Trenctyl Manuform(6x6) BlackPill F401",
     "url": "",
     "usb": {
         "vid": "0x44FD",
         "pid": "0x3836",
-        "device_version": "0.0.1"
+        "device_version": "0.1.0"
     },
     "manufacturer": "mfulz",
     "maintainer": "Matthias Fulz",
