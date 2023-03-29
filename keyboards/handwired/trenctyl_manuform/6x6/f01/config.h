@@ -18,11 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "config_common.h"
-
-//#define PRODUCT_ID 0x3836
-//#define DEVICE_VER 0x0001
-//#define PRODUCT Trenctyl Manuform(6x6) BlackPill F01
+// #define PRODUCT_ID 0x3836
+// #define DEVICE_VER 0x0001
+// #define PRODUCT Trenctyl Manuform(6x6) BlackPill F01
 
 #define MATRIX_ROW_PINS \
     { A15, B13, B14, B15, A8, B6, B7 }
@@ -83,4 +81,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WS2812_PWM_PAL_MODE 1
 
 // hw rnd generator
-//#define ENC_HW_RND_STM32F4
+// #define ENC_HW_RND_STM32F4

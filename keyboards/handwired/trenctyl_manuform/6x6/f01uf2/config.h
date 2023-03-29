@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "config_common.h"
-
 // #define PRODUCT_ID 0x3836
 // #define DEVICE_VER 0x0001
 // #define PRODUCT Trenctyl Manuform(6x6) BlackPill F01

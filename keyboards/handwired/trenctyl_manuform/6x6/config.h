@@ -18,15 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "config_common.h"
-
 /* key matrix size */
 // Rows are doubled-up
 #define MATRIX_ROWS 14
 #define MATRIX_COLS 6
 
 #define RGB_MATRIX_KEYPRESSES
-//#define RGB_MATRIX_KEYRELEASES
+// #define RGB_MATRIX_KEYRELEASES
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 
 #define SPLIT_TRANSPORT_MIRROR
